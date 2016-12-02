@@ -39,6 +39,13 @@
     - restart wildfly
     - change standalone data mode
 
+- name: Check whether Firewalld Service is active
+  service: name=firewalld
+  register: firewalld_result
+
+- include: firewalld.yml
+  when: firewalld_result.status.ActiveState == 'active'
+
 - name: Copy wildfly systemd unit file
   template: src=wildfly.service.j2 dest={{ wildfly_systemd_dir }}/wildfly.service owner=root
             group=root mode=0640
@@ -46,34 +53,6 @@
   notify:
     - restart wildfly
     - change standalone data mode
-
-- name: Open wildfly management http tcp port
-  firewalld:
-    port: '{{ wildfly_manage_http_port }}/tcp'
-    permanent: yes
-    immediate: yes
-    state: enabled
-
-- name: Open wildfly management https tcp port
-  firewalld:
-    port: '{{ wildfly_manage_https_port }}/tcp'
-    permanent: yes
-    immediate: yes
-    state: enabled
-
-- name: Open wildfly http tcp port
-  firewalld:
-    port: '{{ wildfly_http_port }}/tcp'
-    permanent: yes
-    immediate: yes
-    state: enabled
-
-- name: Open wildfly https tcp port
-  firewalld:
-    port: '{{ wildfly_https_port }}/tcp'
-    permanent: yes
-    immediate: yes
-    state: enabled
 
 - name: Enable and start the service
   service:
@@ -88,6 +67,7 @@
     group: '{{ wildfly_group }}'
     mode: '0750'
     recurse: yes
+    state: directory
 
 - name: Delete wildfly tar file
   file:
